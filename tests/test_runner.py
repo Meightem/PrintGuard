@@ -95,11 +95,11 @@ def test_publish_stream_error_logs_info_while_stream_is_already_offline(
 ) -> None:
     service, _fake_mqtt = make_service(monkeypatch)
 
-    with caplog.at_level(logging.INFO, logger="printguard.runner"):
+    with caplog.at_level(logging.DEBUG, logger="printguard.runner"):
         service._publish_stream_error("camera unavailable")
 
     assert "Stream unavailable: camera unavailable" in caplog.text
-    assert not any(record.levelno >= logging.WARNING for record in caplog.records)
+    assert not any(record.levelno >= logging.INFO for record in caplog.records)
 
 
 def test_publish_stream_error_logs_warning_after_stream_was_online(

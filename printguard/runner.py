@@ -154,7 +154,7 @@ class HeadlessService:
         if self.snapshot.stream == StreamState.ON:
             LOGGER.warning("Stream error: %s", error_message)
         else:
-            LOGGER.info("Stream unavailable: %s", error_message)
+            LOGGER.debug("Stream unavailable: %s", error_message)
         self.classification_policy.reset()
         self.snapshot = ServiceSnapshot(
             status=ServiceStatus.OFFLINE,
