@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Unpack
 
 import printguard.runner as runner_module
@@ -86,3 +87,30 @@ def test_publish_stream_error_updates_health_file(tmp_path, monkeypatch) -> None
     assert payload["status"] == "offline"
     assert payload["stream"] == "OFF"
     assert payload["last_error"] == "camera unavailable"
+
+
+def test_publish_stream_error_logs_info_while_stream_is_already_offline(
+    monkeypatch,
+    caplog,
+) -> None:
+    service, _fake_mqtt = make_service(monkeypatch)
+
+    with caplog.at_level(logging.INFO, logger="printguard.runner"):
+        service._publish_stream_error("camera unavailable")
+
+    assert "Stream unavailable: camera unavailable" in caplog.text
+    assert not any(record.levelno >= logging.WARNING for record in caplog.records)
+
+
+def test_publish_stream_error_logs_warning_after_stream_was_online(
+    monkeypatch,
+    caplog,
+) -> None:
+    service, _fake_mqtt = make_service(monkeypatch)
+    service._publish_stream_online()
+
+    with caplog.at_level(logging.INFO, logger="printguard.runner"):
+        service._publish_stream_error("camera disconnected")
+
+    assert "Stream error: camera disconnected" in caplog.text
+    assert any(record.levelno == logging.WARNING for record in caplog.records)
