@@ -2,12 +2,11 @@ import logging
 import time
 from datetime import datetime, timezone
 
-import cv2
-
 from .config import Settings
 from .home_assistant import build_topics, publish_discovery
 from .model import ONNXClassifier
 from .mqtt import MQTTClient
+from .stream import create_frame_source
 
 
 LOGGER = logging.getLogger(__name__)
@@ -64,11 +63,14 @@ class HeadlessService:
         self._publish_current_state()
 
     def _run_stream_session(self) -> None:
-        cap = cv2.VideoCapture(self.settings.mjpeg_url, cv2.CAP_ANY)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self.settings.stream_open_timeout_ms)
-        if not cap.isOpened():
-            self._publish_stream_error("Failed to open MJPEG stream")
+        frame_source = create_frame_source(
+            self.settings.mjpeg_url,
+            self.settings.stream_open_timeout_ms,
+        )
+        try:
+            frame_source.open()
+        except Exception as exc:
+            self._publish_stream_error(str(exc) or "Failed to open MJPEG stream")
             time.sleep(self.settings.stream_retry_delay_ms / 1000.0)
             return
         LOGGER.info("Connected to MJPEG stream")
@@ -77,8 +79,8 @@ class HeadlessService:
         consecutive_failures = 0
         try:
             while self.enabled:
-                ok, frame = cap.read()
-                if not ok or frame is None:
+                frame = frame_source.read_frame()
+                if frame is None:
                     consecutive_failures += 1
                     if consecutive_failures >= 5:
                         self._publish_stream_error("MJPEG stream read failed")
@@ -96,7 +98,7 @@ class HeadlessService:
             LOGGER.exception("Unhandled stream session error")
             self._publish_stream_error(str(exc))
         finally:
-            cap.release()
+            frame_source.close()
             time.sleep(self.settings.stream_retry_delay_ms / 1000.0)
 
     def _publish_current_state(self) -> None:
