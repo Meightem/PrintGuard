@@ -8,6 +8,7 @@ import paho.mqtt.client as mqtt
 
 
 LOGGER = logging.getLogger(__name__)
+PUBLISH_LOGGER = logging.getLogger("printguard.mqtt.publish")
 
 
 class MQTTClient:
@@ -61,6 +62,14 @@ class MQTTClient:
     def publish(self, topic: str, payload: str | dict, retain: bool = True) -> None:
         if isinstance(payload, dict):
             payload = json.dumps(payload, separators=(",", ":"))
+        if PUBLISH_LOGGER.isEnabledFor(logging.DEBUG):
+            PUBLISH_LOGGER.debug(
+                "topic=%s retain=%s qos=%s payload=%r",
+                topic,
+                retain,
+                self.qos,
+                payload,
+            )
         self._client.publish(topic, payload=payload, qos=self.qos, retain=retain)
 
     def subscribe(self, topic: str, handler: Callable[[str], None]) -> None:

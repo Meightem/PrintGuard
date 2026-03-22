@@ -56,7 +56,7 @@ Useful optional env vars:
 - `STREAM_RETRY_DELAY_MS` default `5000`
 - `MQTT_RETRY_DELAY_MS` default `5000`
 - `ENABLED` default `true`
-- `LOG_LEVEL` default `INFO`; set `DEBUG` to log per-frame model outputs
+- `LOG_LEVEL` default `INFO`; set `DEBUG` to log per-frame model outputs and outgoing MQTT publishes
 
 ## Compose
 
@@ -87,5 +87,5 @@ Home Assistant discovery topics are published under `homeassistant/` by default.
 - `stream/state=OFF` means the MJPEG stream could not be opened or frames stopped arriving
 - `defect/state=ON` means the current classification is `failure`
 - `last_inference_ts/state` is `unknown` until the first successful inference
-- `LOG_LEVEL=DEBUG` enables verbose prediction logs from `printguard.prediction`, including distances for each class
+- `LOG_LEVEL=DEBUG` enables verbose logs from `printguard.prediction` and `printguard.mqtt.publish`, including the exact MQTT topics and payloads being sent
 - the service reports stream availability, not actual printer power state, unless your stream only exists while the printer is on
