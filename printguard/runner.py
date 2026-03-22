@@ -1,6 +1,5 @@
 import logging
 import time
-from datetime import datetime, timezone
 
 from .config import Settings
 from .home_assistant import build_topics, publish_discovery
@@ -10,8 +9,7 @@ from .stream import create_frame_source
 
 
 LOGGER = logging.getLogger(__name__)
-WARNING_FAILURE_CONFIDENCE = 50.0
-ERROR_FAILURE_CONFIDENCE = 75.0
+QUALITY_SMOOTHING_ALPHA = 0.35
 
 
 class HeadlessService:
@@ -35,12 +33,8 @@ class HeadlessService:
         self.current_status = "starting"
         self.stream_state = "OFF"
         self.last_classification = "unknown"
-        self.last_classification_confidence = "unknown"
-        self.last_failure_confidence = "unknown"
-        self.last_severity = "unknown"
-        self.defect_state = "OFF"
-        self.last_error = ""
-        self.last_inference_ts = "unknown"
+        self.last_print_quality = "unknown"
+        self.smoothed_failure_confidence: float | None = None
         self.mqtt.add_connect_handler(self._publish_discovery_state)
 
     def run(self) -> None:
@@ -114,25 +108,8 @@ class HeadlessService:
             retain=self.settings.mqtt_retain_state,
         )
         self.mqtt.publish(
-            self.topics.classification_confidence_state,
-            self.last_classification_confidence,
-            retain=self.settings.mqtt_retain_state,
-        )
-        self.mqtt.publish(
-            self.topics.failure_confidence_state,
-            self.last_failure_confidence,
-            retain=self.settings.mqtt_retain_state,
-        )
-        self.mqtt.publish(
-            self.topics.severity_state,
-            self.last_severity,
-            retain=self.settings.mqtt_retain_state,
-        )
-        self.mqtt.publish(self.topics.defect_state, self.defect_state, retain=True)
-        self.mqtt.publish(self.topics.error_state, self.last_error, retain=True)
-        self.mqtt.publish(
-            self.topics.last_inference_ts_state,
-            self.last_inference_ts,
+            self.topics.print_quality_state,
+            self.last_print_quality,
             retain=self.settings.mqtt_retain_state,
         )
 
@@ -140,11 +117,8 @@ class HeadlessService:
         self.current_status = "online"
         self.stream_state = "ON"
         self.last_classification = "unknown"
-        self.last_classification_confidence = "unknown"
-        self.last_failure_confidence = "unknown"
-        self.last_severity = "unknown"
-        self.defect_state = "OFF"
-        self.last_error = ""
+        self.last_print_quality = "unknown"
+        self.smoothed_failure_confidence = None
         self._publish_current_state()
 
     def _publish_stream_error(self, error_message: str) -> None:
@@ -152,36 +126,34 @@ class HeadlessService:
         self.current_status = "offline"
         self.stream_state = "OFF"
         self.last_classification = "unknown"
-        self.last_classification_confidence = "unknown"
-        self.last_failure_confidence = "unknown"
-        self.last_severity = "unknown"
-        self.defect_state = "OFF"
-        self.last_error = error_message
+        self.last_print_quality = "unknown"
+        self.smoothed_failure_confidence = None
         self._publish_current_state()
 
     def _publish_classification(self, prediction: PredictionResult) -> None:
         self.last_classification = prediction.label
-        self.last_classification_confidence = self._format_percentage(
-            prediction.classification_confidence
+        self.smoothed_failure_confidence = self._smooth_failure_confidence(
+            prediction.failure_confidence
         )
-        self.last_failure_confidence = self._format_percentage(prediction.failure_confidence)
-        self.last_severity = self._classify_severity(prediction.failure_confidence)
-        self.defect_state = "ON" if prediction.label == "failure" else "OFF"
-        self.last_inference_ts = datetime.now(timezone.utc).isoformat()
+        self.last_print_quality = str(
+            self._failure_confidence_to_quality(self.smoothed_failure_confidence)
+        )
         self.current_status = "online"
         self.stream_state = "ON"
-        self.last_error = ""
         self._publish_current_state()
 
     @staticmethod
-    def _format_percentage(value: float) -> str:
-        return f"{value * 100:.1f}"
+    def _failure_confidence_to_quality(failure_confidence: float) -> int:
+        thresholds = [0.95, 0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25, 0.15]
+        for index, threshold in enumerate(thresholds, start=1):
+            if failure_confidence >= threshold:
+                return index
+        return 10
 
-    @staticmethod
-    def _classify_severity(failure_confidence: float) -> str:
-        failure_percentage = failure_confidence * 100.0
-        if failure_percentage >= ERROR_FAILURE_CONFIDENCE:
-            return "error"
-        if failure_percentage >= WARNING_FAILURE_CONFIDENCE:
-            return "warning"
-        return "clear"
+    def _smooth_failure_confidence(self, failure_confidence: float) -> float:
+        if self.smoothed_failure_confidence is None:
+            return failure_confidence
+        return (
+            QUALITY_SMOOTHING_ALPHA * failure_confidence
+            + (1.0 - QUALITY_SMOOTHING_ALPHA) * self.smoothed_failure_confidence
+        )

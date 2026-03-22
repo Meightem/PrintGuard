@@ -95,23 +95,25 @@ With `MQTT_TOPIC_PREFIX=printguard`, the service publishes:
 - `printguard/status/state`
 - `printguard/stream/state`
 - `printguard/classification/state`
-- `printguard/classification_confidence/state`
-- `printguard/failure_confidence/state`
-- `printguard/severity/state`
-- `printguard/defect/state`
-- `printguard/error/state`
-- `printguard/last_inference_ts/state`
+- `printguard/print_quality/state`
 
 Home Assistant discovery topics are published under `homeassistant/` by default.
 
 ## Notes
 
 - `stream/state=OFF` means the MJPEG stream could not be opened or frames stopped arriving
-- `classification_confidence/state` is the derived confidence for the selected class in percent
-- `failure_confidence/state` is the derived confidence that the frame looks like a failure in percent
-- `severity/state` is `clear`, `warning`, `error`, or `unknown`; it is derived from failure confidence and is not a calibrated probability
-- `defect/state=ON` means the current classification is `failure`
-- `last_inference_ts/state` is `unknown` until the first successful inference
+- `print_quality/state` is an integer from `1` to `10`; this repo does not contain a separate temporal combination model, so the current implementation derives it from a temporally smoothed failure-confidence signal
+- print quality interpretation:
+  - `1` There is a print failure
+  - `2` There is probably a print failure
+  - `3` There might be a print failure
+  - `4` Monitoring a possible print issue
+  - `5` Monitoring a possible print issue
+  - `6` Good print quality
+  - `7` Good print quality
+  - `8` Great print quality
+  - `9` Great print quality
+  - `10` Perfect print quality
 - `LOG_LEVEL=DEBUG` enables verbose logs from `printguard.prediction` and `printguard.mqtt.publish`, including the exact MQTT topics and payloads being sent
 - the service is always enabled; there is no MQTT or Home Assistant toggle anymore
 - the service reports stream availability, not actual printer power state, unless your stream only exists while the printer is on
