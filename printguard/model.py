@@ -9,6 +9,7 @@ from PIL import Image
 
 
 LOGGER = logging.getLogger(__name__)
+PREDICTION_LOGGER = logging.getLogger("printguard.prediction")
 
 
 class ONNXClassifier:
@@ -28,12 +29,13 @@ class ONNXClassifier:
         with open(self.options_path, "r", encoding="utf-8") as handle:
             model_options = json.load(handle)
         self.input_dims = list(map(int, model_options["model.x_dim"].split(",")))
-        self.session = ort.InferenceSession(
+        session = ort.InferenceSession(
             self.model_path,
             providers=["CPUExecutionProvider"],
         )
-        self.input_name = self.session.get_inputs()[0].name
-        self.output_name = self.session.get_outputs()[0].name
+        self.session = session
+        self.input_name = session.get_inputs()[0].name
+        self.output_name = session.get_outputs()[0].name
         with open(self.prototypes_path, "rb") as handle:
             cache_data = pickle.load(handle)
         self.prototypes = np.asarray(cache_data["prototypes"], dtype=np.float32)
@@ -48,7 +50,20 @@ class ONNXClassifier:
         embedding = np.asarray(outputs[0], dtype=np.float32).reshape(-1)
         distances = np.linalg.norm(self.prototypes - embedding, axis=1)
         index = int(np.argmin(distances))
-        return self.class_names[index]
+        label = self.class_names[index]
+        if PREDICTION_LOGGER.isEnabledFor(logging.DEBUG):
+            distance_map = {
+                class_name: round(float(distances[class_index]), 6)
+                for class_index, class_name in enumerate(self.class_names)
+            }
+            PREDICTION_LOGGER.debug(
+                "label=%s nearest_distance=%.6f distances=%s embedding_norm=%.6f",
+                label,
+                float(distances[index]),
+                distance_map,
+                float(np.linalg.norm(embedding)),
+            )
+        return label
 
     def _preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
         if not self.input_dims or len(self.input_dims) != 3:
