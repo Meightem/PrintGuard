@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Meightem/PrintGuard/compare/printguard-v0.2.0...printguard-v0.3.0) (2026-03-22)
+
+
+### Features
+
+* throttle stable mqtt updates ([b24e514](https://github.com/Meightem/PrintGuard/commit/b24e514204d17ac06687347f7a055722860805d5))
+
 ## [0.2.0](https://github.com/Meightem/PrintGuard/compare/printguard-v0.1.0...printguard-v0.2.0) (2026-03-22)
 
 
