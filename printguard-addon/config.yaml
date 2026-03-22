@@ -1,5 +1,5 @@
 name: PrintGuard
-version: "0.1.0"
+version: 0.2.0
 slug: printguard
 description: MJPEG to MQTT print monitoring service
 url: https://github.com/Meightem/PrintGuard
@@ -11,13 +11,13 @@ boot: auto
 init: false
 image: ghcr.io/meightem/printguard
 options:
-  mjpeg_url: ""
+  mjpeg_url: ''
   mqtt_host: core-mosquitto
   mqtt_port: 1883
   mqtt_topic_prefix: printguard
   mqtt_discovery_prefix: homeassistant
-  mqtt_username: ""
-  mqtt_password: ""
+  mqtt_username: ''
+  mqtt_password: ''
   device_id: printguard-mjpeg-1
   device_name: PrintGuard MJPEG
   detection_interval_ms: 1000
