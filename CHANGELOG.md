@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.4](https://github.com/Meightem/PrintGuard/compare/printguard-v0.3.3...printguard-v0.3.4) (2026-03-22)
+
+
+### Bug Fixes
+
+* lower expected stream outage logging ([c1dec22](https://github.com/Meightem/PrintGuard/commit/c1dec22b6d3d64bbf34106fd3b0079ceeb2c012b))
+* quiet expected stream connection failures ([3efadd1](https://github.com/Meightem/PrintGuard/commit/3efadd167aade9e223c9a8cc94eba42e4c202e87))
+
 ## [0.3.3](https://github.com/Meightem/PrintGuard/compare/printguard-v0.3.2...printguard-v0.3.3) (2026-03-22)
 
 
