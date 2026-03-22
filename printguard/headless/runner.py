@@ -35,8 +35,9 @@ class HeadlessService:
         self.current_status = "starting"
         self.stream_state = "OFF"
         self.last_classification = "unknown"
+        self.defect_state = "OFF"
         self.last_error = ""
-        self.last_inference_ts = ""
+        self.last_inference_ts = "unknown"
         self.mqtt.add_connect_handler(self._publish_discovery_state)
 
     def run(self) -> None:
@@ -102,8 +103,9 @@ class HeadlessService:
         self.current_status = "starting"
         self.stream_state = "OFF"
         self.last_classification = "unknown"
+        self.defect_state = "OFF"
         self.last_error = ""
-        self.last_inference_ts = ""
+        self.last_inference_ts = "unknown"
         self._publish_current_state()
 
     def _publish_current_state(self) -> None:
@@ -120,6 +122,7 @@ class HeadlessService:
             self.last_classification,
             retain=self.settings.mqtt_retain_state,
         )
+        self.mqtt.publish(self.topics.defect_state, self.defect_state, retain=True)
         self.mqtt.publish(self.topics.error_state, self.last_error, retain=True)
         self.mqtt.publish(
             self.topics.last_inference_ts_state,
@@ -130,6 +133,7 @@ class HeadlessService:
     def _publish_disabled_state(self) -> None:
         self.current_status = "disabled"
         self.stream_state = "OFF"
+        self.defect_state = "OFF"
         self._publish_current_state()
 
     def _publish_stream_online(self) -> None:
@@ -142,11 +146,13 @@ class HeadlessService:
         LOGGER.warning("Stream error: %s", error_message)
         self.current_status = "offline"
         self.stream_state = "OFF"
+        self.defect_state = "OFF"
         self.last_error = error_message
         self._publish_current_state()
 
     def _publish_classification(self, label: str) -> None:
         self.last_classification = label
+        self.defect_state = "ON" if label == "failure" else "OFF"
         self.last_inference_ts = datetime.now(timezone.utc).isoformat()
         self.current_status = "online"
         self.stream_state = "ON"

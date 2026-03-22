@@ -9,6 +9,7 @@ class DiscoveryTopics:
     status_state: str
     stream_state: str
     classification_state: str
+    defect_state: str
     error_state: str
     last_inference_ts_state: str
     enabled_state: str
@@ -22,6 +23,7 @@ def build_topics(settings: Settings) -> DiscoveryTopics:
         status_state=f"{base}/status/state",
         stream_state=f"{base}/stream/state",
         classification_state=f"{base}/classification/state",
+        defect_state=f"{base}/defect/state",
         error_state=f"{base}/error/state",
         last_inference_ts_state=f"{base}/last_inference_ts/state",
         enabled_state=f"{base}/enabled/state",
@@ -59,6 +61,18 @@ def publish_discovery(mqtt_client, settings: Settings, topics: DiscoveryTopics) 
             "payload_available": "online",
             "payload_not_available": "offline",
             "icon": "mdi:printer-3d-nozzle-alert",
+            "device": device,
+        },
+        f"{discovery_prefix}/binary_sensor/{settings.device_id}_defect/config": {
+            "unique_id": f"{settings.device_id}_defect",
+            "name": f"{settings.device_name} Defect",
+            "state_topic": topics.defect_state,
+            "payload_on": "ON",
+            "payload_off": "OFF",
+            "availability_topic": topics.availability,
+            "payload_available": "online",
+            "payload_not_available": "offline",
+            "device_class": "problem",
             "device": device,
         },
         f"{discovery_prefix}/sensor/{settings.device_id}_status/config": {

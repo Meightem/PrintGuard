@@ -90,6 +90,7 @@ If `MQTT_TOPIC_PREFIX=printguard`, the service publishes:
 - `printguard/status/state`
 - `printguard/stream/state`
 - `printguard/classification/state`
+- `printguard/defect/state`
 - `printguard/error/state`
 - `printguard/last_inference_ts/state`
 - `printguard/enabled/state`
@@ -101,8 +102,9 @@ If `MQTT_TOPIC_PREFIX=printguard`, the service publishes:
 - `status/state`: `starting`, `online`, `offline`, or `disabled`
 - `stream/state`: `ON` or `OFF`
 - `classification/state`: `success`, `failure`, or `unknown`
+- `defect/state`: `ON` when the current classification is `failure`, otherwise `OFF`
 - `error/state`: latest human-readable error string
-- `last_inference_ts/state`: ISO 8601 UTC timestamp
+- `last_inference_ts/state`: ISO 8601 UTC timestamp after inference, otherwise `unknown`
 - `enabled/state`: `ON` or `OFF`
 - `enabled/set`: accepts `ON` or `OFF`
 
@@ -114,6 +116,7 @@ If `MQTT_DISCOVERY_PREFIX=homeassistant` and `DEVICE_ID=printguard-mjpeg-1`, the
 
 - `homeassistant/binary_sensor/printguard-mjpeg-1_stream/config`
 - `homeassistant/sensor/printguard-mjpeg-1_classification/config`
+- `homeassistant/binary_sensor/printguard-mjpeg-1_defect/config`
 - `homeassistant/sensor/printguard-mjpeg-1_status/config`
 - `homeassistant/sensor/printguard-mjpeg-1_last_error/config`
 - `homeassistant/sensor/printguard-mjpeg-1_last_inference_ts/config`
