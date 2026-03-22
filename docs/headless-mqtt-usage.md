@@ -49,6 +49,21 @@ If your broker requires authentication, also set:
 - `MQTT_USERNAME`
 - `MQTT_PASSWORD`
 
+## Run With Bundled Broker
+
+For a local all-in-one setup, this repository also includes `docker-compose.headless.yml` with:
+
+- `printguard-headless`
+- `mqtt` using Eclipse Mosquitto
+
+Start it with:
+
+```bash
+docker compose -f docker-compose.headless.yml up --build -d
+```
+
+Before starting it, update `MJPEG_URL` in `docker-compose.headless.yml` to your stream URL.
+
 ## Environment Variables
 
 Required:
