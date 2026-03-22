@@ -1,0 +1,29 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: printguard-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  printguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: printguard
+    restart: unless-stopped
+    depends_on:
+      - mqtt
+    environment:
+      MJPEG_URL: "http://printer.local:8080/?action=stream"
+      MQTT_HOST: "mqtt"
+      MQTT_PORT: "1883"
+      MQTT_TOPIC_PREFIX: "printguard"
+      MQTT_DISCOVERY_PREFIX: "homeassistant"
+      DEVICE_ID: "printguard-mjpeg-1"
+      DEVICE_NAME: "PrintGuard MJPEG"
+      DETECTION_INTERVAL_MS: "1000"
+      STREAM_RETRY_DELAY_MS: "5000"
+      MQTT_RETRY_DELAY_MS: "5000"
