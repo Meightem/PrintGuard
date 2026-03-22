@@ -89,24 +89,15 @@ class HeadlessService:
                 now = time.time()
                 if now - last_inference_at < (self.settings.detection_interval_ms / 1000.0):
                     continue
-                prediction = self.classifier.classify_frame(frame)
+                label = self.classifier.classify_frame(frame)
                 last_inference_at = now
-                self._publish_classification(prediction.label)
+                self._publish_classification(label)
         except Exception as exc:
             LOGGER.exception("Unhandled stream session error")
             self._publish_stream_error(str(exc))
         finally:
             cap.release()
             time.sleep(self.settings.stream_retry_delay_ms / 1000.0)
-
-    def _publish_boot_state(self) -> None:
-        self.current_status = "starting"
-        self.stream_state = "OFF"
-        self.last_classification = "unknown"
-        self.defect_state = "OFF"
-        self.last_error = ""
-        self.last_inference_ts = "unknown"
-        self._publish_current_state()
 
     def _publish_current_state(self) -> None:
         self.mqtt.publish(self.topics.availability, "online", retain=True)

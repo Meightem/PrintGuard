@@ -2,8 +2,6 @@ import json
 import logging
 import os
 import pickle
-from dataclasses import dataclass
-from typing import Any
 
 import numpy as np
 import onnxruntime as ort
@@ -11,13 +9,6 @@ from PIL import Image
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class PredictionResult:
-    label: str
-    index: int
-    distances: dict[str, float]
 
 
 class ONNXClassifier:
@@ -31,7 +22,6 @@ class ONNXClassifier:
         self.input_dims: list[int] | None = None
         self.prototypes: np.ndarray | None = None
         self.class_names: list[str] = []
-        self.defect_idx: int = -1
 
     def load(self) -> None:
         self._validate_files()
@@ -48,10 +38,9 @@ class ONNXClassifier:
             cache_data = pickle.load(handle)
         self.prototypes = np.asarray(cache_data["prototypes"], dtype=np.float32)
         self.class_names = list(cache_data["class_names"])
-        self.defect_idx = int(cache_data.get("defect_idx", -1))
         LOGGER.info("Loaded ONNX model with classes: %s", ", ".join(self.class_names))
 
-    def classify_frame(self, frame: np.ndarray) -> PredictionResult:
+    def classify_frame(self, frame: np.ndarray) -> str:
         if self.session is None or self.prototypes is None or self.input_name is None:
             raise RuntimeError("Classifier has not been loaded")
         input_array = self._preprocess_frame(frame)
@@ -59,12 +48,7 @@ class ONNXClassifier:
         embedding = np.asarray(outputs[0], dtype=np.float32).reshape(-1)
         distances = np.linalg.norm(self.prototypes - embedding, axis=1)
         index = int(np.argmin(distances))
-        label = self.class_names[index]
-        return PredictionResult(
-            label=label,
-            index=index,
-            distances={name: float(distances[idx]) for idx, name in enumerate(self.class_names)},
-        )
+        return self.class_names[index]
 
     def _preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
         if not self.input_dims or len(self.input_dims) != 3:

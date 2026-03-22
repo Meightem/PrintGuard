@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from . import __version__
 from .config import Settings
 
 
@@ -36,8 +37,8 @@ def publish_discovery(mqtt_client, settings: Settings, topics: DiscoveryTopics) 
         "identifiers": [settings.device_id],
         "name": settings.device_name,
         "manufacturer": "PrintGuard",
-        "model": "Headless MJPEG Monitor",
-        "sw_version": "headless-dev",
+        "model": "MJPEG MQTT Monitor",
+        "sw_version": __version__,
     }
     discovery_prefix = settings.mqtt_discovery_prefix
     entities = {
