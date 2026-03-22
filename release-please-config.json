@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "include-v-in-tag": true,
+  "bump-minor-pre-major": true,
+  "bootstrap-sha": "4033bab77e137d28b73b8d1f3192cc67ef533363",
+  "packages": {
+    ".": {
+      "package-name": "printguard",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "printguard-addon/config.yaml",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "generic",
+          "path": "printguard-addon/CHANGELOG.md"
+        }
+      ]
+    }
+  }
+}

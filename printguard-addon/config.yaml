@@ -1,5 +1,5 @@
 name: PrintGuard
-version: "1.0.0b3"
+version: "0.1.0"
 slug: printguard
 description: MJPEG to MQTT print monitoring service
 url: https://github.com/Meightem/PrintGuard
