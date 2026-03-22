@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.11-slim-bookworm
+ARG PYTHON_VERSION=3.12-slim-bookworm
 ARG TORCH_VERSION=2.10.0
 
 FROM python:${PYTHON_VERSION} AS model-builder

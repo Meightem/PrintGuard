@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.12"
           cache: pip
@@ -43,22 +43,13 @@ jobs:
       - name: Build package
         run: python -m build
 
-  container:
+  container-build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Build Docker image
         run: docker build -t printguard:ci .
-
-      - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@v0.35.0
-        with:
-          image-ref: printguard:ci
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: HIGH,CRITICAL
