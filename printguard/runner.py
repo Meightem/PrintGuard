@@ -4,12 +4,14 @@ from datetime import datetime, timezone
 
 from .config import Settings
 from .home_assistant import build_topics, publish_discovery
-from .model import ONNXClassifier
+from .model import ONNXClassifier, PredictionResult
 from .mqtt import MQTTClient
 from .stream import create_frame_source
 
 
 LOGGER = logging.getLogger(__name__)
+WARNING_FAILURE_CONFIDENCE = 50.0
+ERROR_FAILURE_CONFIDENCE = 75.0
 
 
 class HeadlessService:
@@ -34,6 +36,9 @@ class HeadlessService:
         self.current_status = "starting"
         self.stream_state = "OFF"
         self.last_classification = "unknown"
+        self.last_classification_confidence = "unknown"
+        self.last_failure_confidence = "unknown"
+        self.last_severity = "unknown"
         self.defect_state = "OFF"
         self.last_error = ""
         self.last_inference_ts = "unknown"
@@ -91,9 +96,9 @@ class HeadlessService:
                 now = time.time()
                 if now - last_inference_at < (self.settings.detection_interval_ms / 1000.0):
                     continue
-                label = self.classifier.classify_frame(frame)
+                prediction = self.classifier.classify_frame(frame)
                 last_inference_at = now
-                self._publish_classification(label)
+                self._publish_classification(prediction)
         except Exception as exc:
             LOGGER.exception("Unhandled stream session error")
             self._publish_stream_error(str(exc))
@@ -115,6 +120,21 @@ class HeadlessService:
             self.last_classification,
             retain=self.settings.mqtt_retain_state,
         )
+        self.mqtt.publish(
+            self.topics.classification_confidence_state,
+            self.last_classification_confidence,
+            retain=self.settings.mqtt_retain_state,
+        )
+        self.mqtt.publish(
+            self.topics.failure_confidence_state,
+            self.last_failure_confidence,
+            retain=self.settings.mqtt_retain_state,
+        )
+        self.mqtt.publish(
+            self.topics.severity_state,
+            self.last_severity,
+            retain=self.settings.mqtt_retain_state,
+        )
         self.mqtt.publish(self.topics.defect_state, self.defect_state, retain=True)
         self.mqtt.publish(self.topics.error_state, self.last_error, retain=True)
         self.mqtt.publish(
@@ -126,12 +146,21 @@ class HeadlessService:
     def _publish_disabled_state(self) -> None:
         self.current_status = "disabled"
         self.stream_state = "OFF"
+        self.last_classification = "unknown"
+        self.last_classification_confidence = "unknown"
+        self.last_failure_confidence = "unknown"
+        self.last_severity = "unknown"
         self.defect_state = "OFF"
         self._publish_current_state()
 
     def _publish_stream_online(self) -> None:
         self.current_status = "online"
         self.stream_state = "ON"
+        self.last_classification = "unknown"
+        self.last_classification_confidence = "unknown"
+        self.last_failure_confidence = "unknown"
+        self.last_severity = "unknown"
+        self.defect_state = "OFF"
         self.last_error = ""
         self._publish_current_state()
 
@@ -139,13 +168,22 @@ class HeadlessService:
         LOGGER.warning("Stream error: %s", error_message)
         self.current_status = "offline"
         self.stream_state = "OFF"
+        self.last_classification = "unknown"
+        self.last_classification_confidence = "unknown"
+        self.last_failure_confidence = "unknown"
+        self.last_severity = "unknown"
         self.defect_state = "OFF"
         self.last_error = error_message
         self._publish_current_state()
 
-    def _publish_classification(self, label: str) -> None:
-        self.last_classification = label
-        self.defect_state = "ON" if label == "failure" else "OFF"
+    def _publish_classification(self, prediction: PredictionResult) -> None:
+        self.last_classification = prediction.label
+        self.last_classification_confidence = self._format_percentage(
+            prediction.classification_confidence
+        )
+        self.last_failure_confidence = self._format_percentage(prediction.failure_confidence)
+        self.last_severity = self._classify_severity(prediction.failure_confidence)
+        self.defect_state = "ON" if prediction.label == "failure" else "OFF"
         self.last_inference_ts = datetime.now(timezone.utc).isoformat()
         self.current_status = "online"
         self.stream_state = "ON"
@@ -163,3 +201,16 @@ class HeadlessService:
             self.current_status = "disabled"
             self.stream_state = "OFF"
             self._publish_current_state()
+
+    @staticmethod
+    def _format_percentage(value: float) -> str:
+        return f"{value * 100:.1f}"
+
+    @staticmethod
+    def _classify_severity(failure_confidence: float) -> str:
+        failure_percentage = failure_confidence * 100.0
+        if failure_percentage >= ERROR_FAILURE_CONFIDENCE:
+            return "error"
+        if failure_percentage >= WARNING_FAILURE_CONFIDENCE:
+            return "warning"
+        return "clear"

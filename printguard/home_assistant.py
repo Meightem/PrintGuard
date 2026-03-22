@@ -10,6 +10,9 @@ class DiscoveryTopics:
     status_state: str
     stream_state: str
     classification_state: str
+    classification_confidence_state: str
+    failure_confidence_state: str
+    severity_state: str
     defect_state: str
     error_state: str
     last_inference_ts_state: str
@@ -24,6 +27,9 @@ def build_topics(settings: Settings) -> DiscoveryTopics:
         status_state=f"{base}/status/state",
         stream_state=f"{base}/stream/state",
         classification_state=f"{base}/classification/state",
+        classification_confidence_state=f"{base}/classification_confidence/state",
+        failure_confidence_state=f"{base}/failure_confidence/state",
+        severity_state=f"{base}/severity/state",
         defect_state=f"{base}/defect/state",
         error_state=f"{base}/error/state",
         last_inference_ts_state=f"{base}/last_inference_ts/state",
@@ -62,6 +68,38 @@ def publish_discovery(mqtt_client, settings: Settings, topics: DiscoveryTopics) 
             "payload_available": "online",
             "payload_not_available": "offline",
             "icon": "mdi:printer-3d-nozzle-alert",
+            "device": device,
+        },
+        f"{discovery_prefix}/sensor/{settings.device_id}_classification_confidence/config": {
+            "unique_id": f"{settings.device_id}_classification_confidence",
+            "name": f"{settings.device_name} Classification Confidence",
+            "state_topic": topics.classification_confidence_state,
+            "availability_topic": topics.availability,
+            "payload_available": "online",
+            "payload_not_available": "offline",
+            "unit_of_measurement": "%",
+            "icon": "mdi:percent-outline",
+            "device": device,
+        },
+        f"{discovery_prefix}/sensor/{settings.device_id}_failure_confidence/config": {
+            "unique_id": f"{settings.device_id}_failure_confidence",
+            "name": f"{settings.device_name} Failure Confidence",
+            "state_topic": topics.failure_confidence_state,
+            "availability_topic": topics.availability,
+            "payload_available": "online",
+            "payload_not_available": "offline",
+            "unit_of_measurement": "%",
+            "icon": "mdi:alert-decagram-outline",
+            "device": device,
+        },
+        f"{discovery_prefix}/sensor/{settings.device_id}_severity/config": {
+            "unique_id": f"{settings.device_id}_severity",
+            "name": f"{settings.device_name} Severity",
+            "state_topic": topics.severity_state,
+            "availability_topic": topics.availability,
+            "payload_available": "online",
+            "payload_not_available": "offline",
+            "icon": "mdi:alert-outline",
             "device": device,
         },
         f"{discovery_prefix}/binary_sensor/{settings.device_id}_defect/config": {

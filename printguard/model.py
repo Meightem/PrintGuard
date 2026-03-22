@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import pickle
+from dataclasses import dataclass
 
 import numpy as np
 import onnxruntime as ort
@@ -10,6 +11,15 @@ from PIL import Image
 
 LOGGER = logging.getLogger(__name__)
 PREDICTION_LOGGER = logging.getLogger("printguard.prediction")
+
+
+@dataclass(frozen=True)
+class PredictionResult:
+    label: str
+    classification_confidence: float
+    failure_confidence: float
+    margin: float
+    distances: dict[str, float]
 
 
 class ONNXClassifier:
@@ -42,28 +52,62 @@ class ONNXClassifier:
         self.class_names = list(cache_data["class_names"])
         LOGGER.info("Loaded ONNX model with classes: %s", ", ".join(self.class_names))
 
-    def classify_frame(self, frame: np.ndarray) -> str:
+    def classify_frame(self, frame: np.ndarray) -> PredictionResult:
         if self.session is None or self.prototypes is None or self.input_name is None:
             raise RuntimeError("Classifier has not been loaded")
         input_array = self._preprocess_frame(frame)
         outputs = self.session.run([self.output_name], {self.input_name: input_array})
         embedding = np.asarray(outputs[0], dtype=np.float32).reshape(-1)
         distances = np.linalg.norm(self.prototypes - embedding, axis=1)
+        probabilities = self._distances_to_probabilities(distances)
         index = int(np.argmin(distances))
         label = self.class_names[index]
+        classification_confidence = float(probabilities[index])
+        sorted_probabilities = np.sort(probabilities)
+        if len(sorted_probabilities) > 1:
+            margin = float(sorted_probabilities[-1] - sorted_probabilities[-2])
+        else:
+            margin = float(sorted_probabilities[-1])
+        failure_confidence = self._lookup_failure_confidence(probabilities)
+        distance_map = {
+            class_name: round(float(distances[class_index]), 6)
+            for class_index, class_name in enumerate(self.class_names)
+        }
         if PREDICTION_LOGGER.isEnabledFor(logging.DEBUG):
-            distance_map = {
-                class_name: round(float(distances[class_index]), 6)
-                for class_index, class_name in enumerate(self.class_names)
-            }
             PREDICTION_LOGGER.debug(
-                "label=%s nearest_distance=%.6f distances=%s embedding_norm=%.6f",
+                (
+                    "label=%s classification_confidence=%.4f failure_confidence=%.4f "
+                    "margin=%.4f nearest_distance=%.6f distances=%s embedding_norm=%.6f"
+                ),
                 label,
+                classification_confidence,
+                failure_confidence,
+                margin,
                 float(distances[index]),
                 distance_map,
                 float(np.linalg.norm(embedding)),
             )
-        return label
+        return PredictionResult(
+            label=label,
+            classification_confidence=classification_confidence,
+            failure_confidence=failure_confidence,
+            margin=margin,
+            distances=distance_map,
+        )
+
+    def _lookup_failure_confidence(self, probabilities: np.ndarray) -> float:
+        try:
+            failure_index = self.class_names.index("failure")
+        except ValueError:
+            return 0.0
+        return float(probabilities[failure_index])
+
+    @staticmethod
+    def _distances_to_probabilities(distances: np.ndarray) -> np.ndarray:
+        scores = -distances.astype(np.float64)
+        scores -= np.max(scores)
+        exp_scores = np.exp(scores)
+        return exp_scores / np.sum(exp_scores)
 
     def _preprocess_frame(self, frame: np.ndarray) -> np.ndarray:
         if not self.input_dims or len(self.input_dims) != 3:

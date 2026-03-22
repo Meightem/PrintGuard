@@ -96,6 +96,9 @@ With `MQTT_TOPIC_PREFIX=printguard`, the service publishes:
 - `printguard/status/state`
 - `printguard/stream/state`
 - `printguard/classification/state`
+- `printguard/classification_confidence/state`
+- `printguard/failure_confidence/state`
+- `printguard/severity/state`
 - `printguard/defect/state`
 - `printguard/error/state`
 - `printguard/last_inference_ts/state`
@@ -107,6 +110,9 @@ Home Assistant discovery topics are published under `homeassistant/` by default.
 ## Notes
 
 - `stream/state=OFF` means the MJPEG stream could not be opened or frames stopped arriving
+- `classification_confidence/state` is the derived confidence for the selected class in percent
+- `failure_confidence/state` is the derived confidence that the frame looks like a failure in percent
+- `severity/state` is `clear`, `warning`, `error`, or `unknown`; it is derived from failure confidence and is not a calibrated probability
 - `defect/state=ON` means the current classification is `failure`
 - `last_inference_ts/state` is `unknown` until the first successful inference
 - `LOG_LEVEL=DEBUG` enables verbose logs from `printguard.prediction` and `printguard.mqtt.publish`, including the exact MQTT topics and payloads being sent
