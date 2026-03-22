@@ -7,7 +7,7 @@ PrintGuard is a small Home Assistant add-on that watches one MJPEG camera feed, 
 
 In other words: point a printer webcam at your print, let the model stare at it, and let Home Assistant do the dashboard part.
 
-> This fork is heavily adapted from the original PrintGuard project by Oliver Bravery. This version is intentionally stripped down, Home Assistant-focused, and yes, very much vibe-coded.
+> This fork is heavily adapted from the original [PrintGuard project](https://github.com/oliverbravery/PrintGuard) by [Oliver Bravery](https://github.com/oliverbravery). This version is intentionally stripped down, Home Assistant-focused, and yes, very much vibe-coded.
 
 ## What It Is
 
@@ -132,8 +132,8 @@ Set `log_level: DEBUG` if you want detailed model logs and exact outgoing MQTT p
 
 This project is heavily derived from the original PrintGuard project:
 
-- upstream repo: `https://github.com/oliverbravery/PrintGuard`
-- original author: Oliver Bravery
+- upstream repo: [oliverbravery/PrintGuard](https://github.com/oliverbravery/PrintGuard)
+- original author: [Oliver Bravery](https://github.com/oliverbravery)
 
 The original project was a broader print monitoring application with a web UI and more runtime components. This fork trims that down to a single job: Home Assistant add-on, webcam in, MQTT out.
 

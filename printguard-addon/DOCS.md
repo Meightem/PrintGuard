@@ -60,5 +60,5 @@ The add-on publishes four main Home Assistant entities:
 - Stable good-state MQTT updates are rate-limited; important changes still publish quickly.
 - Stream availability is not the same thing as actual printer power state.
 - The add-on image is pulled from GHCR and should match the version in `config.yaml`.
-- This fork is heavily adapted from the original upstream project by Oliver Bravery.
+- This fork is heavily adapted from the original [PrintGuard project](https://github.com/oliverbravery/PrintGuard) by [Oliver Bravery](https://github.com/oliverbravery).
 - The runtime container now publishes a local health state file that is used by Docker health checks.

@@ -4,6 +4,6 @@ Home Assistant add-on packaging for the stripped-down PrintGuard fork.
 
 - one MJPEG feed in
 - MQTT auto-discovery entities out
-- heavily adapted from the original `oliverbravery/PrintGuard`
+- heavily adapted from the original [oliverbravery/PrintGuard](https://github.com/oliverbravery/PrintGuard)
 
 See `DOCS.md` for installation and configuration.
