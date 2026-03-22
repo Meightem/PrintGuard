@@ -63,7 +63,6 @@ Useful optional env vars:
 - `STREAM_OPEN_TIMEOUT_MS` default `5000`
 - `STREAM_RETRY_DELAY_MS` default `5000`
 - `MQTT_RETRY_DELAY_MS` default `5000`
-- `ENABLED` default `true`
 - `LOG_LEVEL` default `INFO`; set `DEBUG` to log per-frame model outputs and outgoing MQTT publishes
 
 ## Compose
@@ -102,8 +101,6 @@ With `MQTT_TOPIC_PREFIX=printguard`, the service publishes:
 - `printguard/defect/state`
 - `printguard/error/state`
 - `printguard/last_inference_ts/state`
-- `printguard/enabled/state`
-- `printguard/enabled/set`
 
 Home Assistant discovery topics are published under `homeassistant/` by default.
 
@@ -116,4 +113,5 @@ Home Assistant discovery topics are published under `homeassistant/` by default.
 - `defect/state=ON` means the current classification is `failure`
 - `last_inference_ts/state` is `unknown` until the first successful inference
 - `LOG_LEVEL=DEBUG` enables verbose logs from `printguard.prediction` and `printguard.mqtt.publish`, including the exact MQTT topics and payloads being sent
+- the service is always enabled; there is no MQTT or Home Assistant toggle anymore
 - the service reports stream availability, not actual printer power state, unless your stream only exists while the printer is on

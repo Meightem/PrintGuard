@@ -38,9 +38,6 @@ configuration:
   mqtt_retry_delay_ms:
     name: MQTT retry delay
     description: Delay before MQTT reconnect attempts in milliseconds
-  enabled:
-    name: Enabled
-    description: Start the service in the enabled state
   log_level:
     name: Log level
     description: Use DEBUG to log predictions and outgoing MQTT payloads

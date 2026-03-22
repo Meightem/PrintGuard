@@ -64,7 +64,6 @@ class Settings:
     detection_interval_ms: int
     stream_open_timeout_ms: int
     stream_retry_delay_ms: int
-    enabled: bool
     log_level: str
     model_path: str
     model_options_path: str
@@ -103,7 +102,6 @@ class Settings:
             detection_interval_ms=_get_int("DETECTION_INTERVAL_MS", addon_options, 1000),
             stream_open_timeout_ms=_get_int("STREAM_OPEN_TIMEOUT_MS", addon_options, 5000),
             stream_retry_delay_ms=_get_int("STREAM_RETRY_DELAY_MS", addon_options, 5000),
-            enabled=_get_bool("ENABLED", addon_options, True),
             log_level=_get_str("LOG_LEVEL", addon_options, "INFO").upper(),
             model_path=_get_str(
                 "MODEL_PATH",

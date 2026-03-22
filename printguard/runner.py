@@ -32,7 +32,6 @@ class HeadlessService:
             options_path=settings.model_options_path,
             prototypes_path=settings.prototypes_path,
         )
-        self.enabled = settings.enabled
         self.current_status = "starting"
         self.stream_state = "OFF"
         self.last_classification = "unknown"
@@ -49,12 +48,7 @@ class HeadlessService:
         self.mqtt.connect(self.topics.availability)
         if not self.mqtt.wait_until_connected():
             raise RuntimeError("Failed to connect to MQTT broker within timeout")
-        self.mqtt.subscribe(self.topics.enabled_set, self._handle_enabled_command)
         while True:
-            if not self.enabled:
-                self._publish_disabled_state()
-                time.sleep(1.0)
-                continue
             self._run_stream_session()
 
     def stop(self) -> None:
@@ -83,7 +77,7 @@ class HeadlessService:
         last_inference_at = 0.0
         consecutive_failures = 0
         try:
-            while self.enabled:
+            while True:
                 frame = frame_source.read_frame()
                 if frame is None:
                     consecutive_failures += 1
@@ -113,7 +107,6 @@ class HeadlessService:
             self.current_status,
             retain=self.settings.mqtt_retain_state,
         )
-        self.mqtt.publish(self.topics.enabled_state, "ON" if self.enabled else "OFF", retain=True)
         self.mqtt.publish(self.topics.stream_state, self.stream_state, retain=True)
         self.mqtt.publish(
             self.topics.classification_state,
@@ -142,16 +135,6 @@ class HeadlessService:
             self.last_inference_ts,
             retain=self.settings.mqtt_retain_state,
         )
-
-    def _publish_disabled_state(self) -> None:
-        self.current_status = "disabled"
-        self.stream_state = "OFF"
-        self.last_classification = "unknown"
-        self.last_classification_confidence = "unknown"
-        self.last_failure_confidence = "unknown"
-        self.last_severity = "unknown"
-        self.defect_state = "OFF"
-        self._publish_current_state()
 
     def _publish_stream_online(self) -> None:
         self.current_status = "online"
@@ -189,18 +172,6 @@ class HeadlessService:
         self.stream_state = "ON"
         self.last_error = ""
         self._publish_current_state()
-
-    def _handle_enabled_command(self, payload: str) -> None:
-        normalized = payload.strip().upper()
-        if normalized == "ON":
-            self.enabled = True
-            self.current_status = "starting"
-            self._publish_current_state()
-        elif normalized == "OFF":
-            self.enabled = False
-            self.current_status = "disabled"
-            self.stream_state = "OFF"
-            self._publish_current_state()
 
     @staticmethod
     def _format_percentage(value: float) -> str:

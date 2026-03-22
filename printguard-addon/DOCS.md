@@ -32,7 +32,6 @@ PrintGuard reads one MJPEG stream, classifies frames with the baked-in ONNX mode
 - `stream_open_timeout_ms`: MJPEG connect timeout
 - `stream_retry_delay_ms`: delay before reconnect attempts
 - `mqtt_retry_delay_ms`: delay before MQTT reconnect attempts
-- `enabled`: initial enabled state
 - `log_level`: use `DEBUG` to log model outputs and exact MQTT publishes
 
 ## Notes

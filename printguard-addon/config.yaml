@@ -24,7 +24,6 @@ options:
   stream_open_timeout_ms: 5000
   stream_retry_delay_ms: 5000
   mqtt_retry_delay_ms: 5000
-  enabled: true
   log_level: INFO
 schema:
   mjpeg_url: str
@@ -40,5 +39,4 @@ schema:
   stream_open_timeout_ms: int
   stream_retry_delay_ms: int
   mqtt_retry_delay_ms: int
-  enabled: bool
   log_level: str

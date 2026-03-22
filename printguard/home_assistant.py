@@ -16,8 +16,6 @@ class DiscoveryTopics:
     defect_state: str
     error_state: str
     last_inference_ts_state: str
-    enabled_state: str
-    enabled_set: str
 
 
 def build_topics(settings: Settings) -> DiscoveryTopics:
@@ -33,8 +31,6 @@ def build_topics(settings: Settings) -> DiscoveryTopics:
         defect_state=f"{base}/defect/state",
         error_state=f"{base}/error/state",
         last_inference_ts_state=f"{base}/last_inference_ts/state",
-        enabled_state=f"{base}/enabled/state",
-        enabled_set=f"{base}/enabled/set",
     )
 
 
@@ -142,21 +138,6 @@ def publish_discovery(mqtt_client, settings: Settings, topics: DiscoveryTopics) 
             "payload_available": "online",
             "payload_not_available": "offline",
             "icon": "mdi:clock-outline",
-            "device": device,
-        },
-        f"{discovery_prefix}/switch/{settings.device_id}_enabled/config": {
-            "unique_id": f"{settings.device_id}_enabled",
-            "name": f"{settings.device_name} Enabled",
-            "state_topic": topics.enabled_state,
-            "command_topic": topics.enabled_set,
-            "payload_on": "ON",
-            "payload_off": "OFF",
-            "state_on": "ON",
-            "state_off": "OFF",
-            "availability_topic": topics.availability,
-            "payload_available": "online",
-            "payload_not_available": "offline",
-            "icon": "mdi:toggle-switch-outline",
             "device": device,
         },
     }
