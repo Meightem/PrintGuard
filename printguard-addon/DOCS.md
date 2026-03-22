@@ -26,11 +26,19 @@ If you use the official Mosquitto add-on, `core-mosquitto` is usually the correc
 - `mqtt_discovery_prefix`: Home Assistant discovery prefix, default `homeassistant`
 - `mqtt_username`: optional MQTT username
 - `mqtt_password`: optional MQTT password
+- `mqtt_connect_timeout_seconds`: startup wait time for MQTT connection
+- `mqtt_connect_max_attempts`: optional limit for initial MQTT connection retries, `0` means unlimited
+- `mqtt_tls_enabled`: enable TLS for the MQTT connection
+- `mqtt_tls_insecure`: allow insecure TLS validation for development-only setups
+- `mqtt_tls_ca_path`: optional CA certificate path for TLS validation
+- `mqtt_tls_certfile`: optional client certificate path for mutual TLS
+- `mqtt_tls_keyfile`: optional client private key path for mutual TLS
 - `device_id`: Home Assistant device identifier
 - `device_name`: Home Assistant device name
 - `detection_interval_ms`: time between inferences
 - `stream_open_timeout_ms`: MJPEG connect timeout
 - `stream_retry_delay_ms`: delay before reconnect attempts
+- `stream_read_failure_limit`: consecutive failed frame reads before the stream is marked offline
 - `mqtt_retry_delay_ms`: delay before MQTT reconnect attempts
 - `log_level`: set `DEBUG` to log model details and exact MQTT payloads
 
@@ -53,3 +61,4 @@ The add-on publishes four main Home Assistant entities:
 - Stream availability is not the same thing as actual printer power state.
 - The add-on image is pulled from GHCR and should match the version in `config.yaml`.
 - This fork is heavily adapted from the original upstream project by Oliver Bravery.
+- The runtime container now publishes a local health state file that is used by Docker health checks.

@@ -1,13 +1,11 @@
 import json
 import logging
 import os
-import pickle
 from dataclasses import dataclass
 
 import numpy as np
 import onnxruntime as ort
 from PIL import Image
-
 
 LOGGER = logging.getLogger(__name__)
 PREDICTION_LOGGER = logging.getLogger("printguard.prediction")
@@ -36,7 +34,7 @@ class ONNXClassifier:
 
     def load(self) -> None:
         self._validate_files()
-        with open(self.options_path, "r", encoding="utf-8") as handle:
+        with open(self.options_path, encoding="utf-8") as handle:
             model_options = json.load(handle)
         self.input_dims = list(map(int, model_options["model.x_dim"].split(",")))
         session = ort.InferenceSession(
@@ -46,10 +44,10 @@ class ONNXClassifier:
         self.session = session
         self.input_name = session.get_inputs()[0].name
         self.output_name = session.get_outputs()[0].name
-        with open(self.prototypes_path, "rb") as handle:
-            cache_data = pickle.load(handle)
-        self.prototypes = np.asarray(cache_data["prototypes"], dtype=np.float32)
-        self.class_names = list(cache_data["class_names"])
+        with np.load(self.prototypes_path, allow_pickle=False) as cache_data:
+            self.prototypes = np.asarray(cache_data["prototypes"], dtype=np.float32)
+            class_names = np.asarray(cache_data["class_names"], dtype=np.str_)
+            self.class_names = [str(class_name) for class_name in class_names.tolist()]
         LOGGER.info("Loaded ONNX model with classes: %s", ", ".join(self.class_names))
 
     def classify_frame(self, frame: np.ndarray) -> PredictionResult:
@@ -140,7 +138,11 @@ class ONNXClassifier:
         return image.resize((new_width, new_height), Image.Resampling.BILINEAR)
 
     @staticmethod
-    def _center_crop(image: Image.Image, crop_width: int, crop_height: int) -> Image.Image:
+    def _center_crop(
+        image: Image.Image,
+        crop_width: int,
+        crop_height: int,
+    ) -> Image.Image:
         width, height = image.size
         left = max((width - crop_width) // 2, 0)
         top = max((height - crop_height) // 2, 0)

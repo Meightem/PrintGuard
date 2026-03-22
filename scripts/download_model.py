@@ -1,9 +1,11 @@
 import argparse
 import pickle
+import time
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from huggingface_hub import hf_hub_download
 import numpy as np
+from huggingface_hub import hf_hub_download
 
 try:
     import torch
@@ -17,58 +19,83 @@ FILES = {
     "model": "model.onnx",
     "options": "opt.json",
     "prototypes": "prototypes.pkl",
+    "normalized_prototypes": "prototypes.npz",
 }
+
+
+def _download_with_retries(repo_id: str, filename: str, local_dir: Path) -> Path:
+    attempts = 3
+    for attempt in range(1, attempts + 1):
+        try:
+            return Path(
+                hf_hub_download(repo_id=repo_id, filename=filename, local_dir=local_dir)
+            )
+        except Exception:
+            if attempt == attempts:
+                raise
+            time.sleep(attempt)
+    raise RuntimeError(f"Failed to download required artifact: {filename}")
 
 
 def download(repo_id: str, output_dir: str) -> None:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    prototypes_cache_dir = output_path / "prototypes" / "cache"
-    prototypes_cache_dir.mkdir(parents=True, exist_ok=True)
-    model_path = output_path / FILES["model"]
-    options_path = output_path / FILES["options"]
-    prototypes_path = prototypes_cache_dir / FILES["prototypes"]
-    downloaded_model = Path(
-        hf_hub_download(repo_id=repo_id, filename=FILES["model"], local_dir=output_path)
-    )
-    downloaded_options = Path(
-        hf_hub_download(repo_id=repo_id, filename=FILES["options"], local_dir=output_path)
-    )
-    downloaded_prototypes = Path(
-        hf_hub_download(repo_id=repo_id, filename=FILES["prototypes"], local_dir=output_path)
-    )
-    if downloaded_model != model_path:
+    with TemporaryDirectory(dir=output_path) as staging_dir_name:
+        staging_dir = Path(staging_dir_name)
+        model_path = output_path / FILES["model"]
+        options_path = output_path / FILES["options"]
+        prototypes_path = output_path / FILES["normalized_prototypes"]
+        downloaded_model = _download_with_retries(
+            repo_id,
+            FILES["model"],
+            staging_dir,
+        )
+        downloaded_options = _download_with_retries(
+            repo_id,
+            FILES["options"],
+            staging_dir,
+        )
+        downloaded_prototypes = _download_with_retries(
+            repo_id,
+            FILES["prototypes"],
+            staging_dir,
+        )
+        normalized_prototypes = staging_dir / FILES["normalized_prototypes"]
+        normalize_prototypes(downloaded_prototypes, normalized_prototypes)
         downloaded_model.replace(model_path)
-    if downloaded_options != options_path:
         downloaded_options.replace(options_path)
-    if downloaded_prototypes != prototypes_path:
-        downloaded_prototypes.replace(prototypes_path)
-    normalize_prototypes(prototypes_path)
+        normalized_prototypes.replace(prototypes_path)
 
 
-def normalize_prototypes(prototypes_path: Path) -> None:
+def normalize_prototypes(raw_prototypes_path: Path, output_path: Path) -> None:
     if torch is None:
-        raise RuntimeError("torch is required at build time to normalize prototypes.pkl")
-    with open(prototypes_path, "rb") as handle:
+        raise RuntimeError(
+            "torch is required at build time to normalize prototypes artifacts"
+        )
+    with open(raw_prototypes_path, "rb") as handle:
         cache_data = pickle.load(handle)
     prototypes = cache_data.get("prototypes")
     if hasattr(prototypes, "detach"):
         prototypes = prototypes.detach().cpu().numpy()
     else:
         prototypes = np.asarray(prototypes, dtype=np.float32)
-    normalized_cache = {
-        "prototypes": prototypes.astype(np.float32),
-        "class_names": list(cache_data.get("class_names", [])),
-        "defect_idx": int(cache_data.get("defect_idx", -1)),
-    }
-    with open(prototypes_path, "wb") as handle:
-        pickle.dump(normalized_cache, handle)
+    class_names = np.asarray(list(cache_data.get("class_names", [])), dtype=np.str_)
+    np.savez_compressed(
+        output_path,
+        prototypes=prototypes.astype(np.float32),
+        class_names=class_names,
+        defect_idx=np.asarray(int(cache_data.get("defect_idx", -1)), dtype=np.int64),
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Download PrintGuard ONNX artifacts")
     parser.add_argument("--repo", default=DEFAULT_REPO, help="Hugging Face repo id")
-    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR, help="Model output directory")
+    parser.add_argument(
+        "--output-dir",
+        default=DEFAULT_OUTPUT_DIR,
+        help="Model output directory",
+    )
     args = parser.parse_args()
     download(args.repo, args.output_dir)
 

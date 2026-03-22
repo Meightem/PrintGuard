@@ -18,11 +18,19 @@ options:
   mqtt_discovery_prefix: homeassistant
   mqtt_username: ''
   mqtt_password: ''
+  mqtt_connect_timeout_seconds: 30
+  mqtt_connect_max_attempts: 0
+  mqtt_tls_enabled: false
+  mqtt_tls_insecure: false
+  mqtt_tls_ca_path: ''
+  mqtt_tls_certfile: ''
+  mqtt_tls_keyfile: ''
   device_id: printguard-mjpeg-1
   device_name: PrintGuard MJPEG
   detection_interval_ms: 1000
   stream_open_timeout_ms: 5000
   stream_retry_delay_ms: 5000
+  stream_read_failure_limit: 5
   mqtt_retry_delay_ms: 5000
   log_level: INFO
 schema:
@@ -33,10 +41,18 @@ schema:
   mqtt_discovery_prefix: str
   mqtt_username: str?
   mqtt_password: password?
+  mqtt_connect_timeout_seconds: int
+  mqtt_connect_max_attempts: int
+  mqtt_tls_enabled: bool
+  mqtt_tls_insecure: bool
+  mqtt_tls_ca_path: str?
+  mqtt_tls_certfile: str?
+  mqtt_tls_keyfile: str?
   device_id: str
   device_name: str
   detection_interval_ms: int
   stream_open_timeout_ms: int
   stream_retry_delay_ms: int
+  stream_read_failure_limit: int
   mqtt_retry_delay_ms: int
   log_level: str

@@ -1,4 +1,3 @@
-import socket
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -44,8 +43,6 @@ class HTTPMJPEGStream:
                 chunk = self.response.read(4096)
             except TimeoutError as exc:
                 raise RuntimeError("Timed out reading MJPEG stream") from exc
-            except socket.timeout as exc:
-                raise RuntimeError("Timed out reading MJPEG stream") from exc
             if not chunk:
                 raise RuntimeError("MJPEG stream ended")
             self.buffer.extend(chunk)
@@ -72,14 +69,15 @@ class OpenCVFrameSource:
     def __init__(self, url: str, open_timeout_ms: int):
         self.url = url
         self.open_timeout_ms = open_timeout_ms
-        self.cap = None
+        self.cap: cv2.VideoCapture | None = None
 
     def open(self) -> None:
-        self.cap = cv2.VideoCapture(self.url, cv2.CAP_ANY)
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self.open_timeout_ms)
-        if not self.cap.isOpened():
+        cap = cv2.VideoCapture(self.url, cv2.CAP_ANY)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self.open_timeout_ms)
+        if not cap.isOpened():
             raise RuntimeError("Failed to open video stream")
+        self.cap = cap
 
     def read_frame(self):
         if self.cap is None:

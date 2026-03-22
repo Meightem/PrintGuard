@@ -110,11 +110,19 @@ Useful optional options:
 - `mqtt_discovery_prefix`
 - `mqtt_username`
 - `mqtt_password`
+- `mqtt_connect_timeout_seconds`
+- `mqtt_connect_max_attempts`
+- `mqtt_tls_enabled`
+- `mqtt_tls_insecure`
+- `mqtt_tls_ca_path`
+- `mqtt_tls_certfile`
+- `mqtt_tls_keyfile`
 - `device_id`
 - `device_name`
 - `detection_interval_ms`
 - `stream_open_timeout_ms`
 - `stream_retry_delay_ms`
+- `stream_read_failure_limit`
 - `mqtt_retry_delay_ms`
 - `log_level`
 
@@ -135,6 +143,29 @@ The model, general inference flow, and overall project direction all come from t
 
 <details>
 <summary>Local development notes</summary>
+
+Set up a local development environment:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install --constraint constraints.lock -e ".[dev]"
+```
+
+Run the local quality checks:
+
+```bash
+ruff check .
+mypy printguard tests
+pytest --cov=printguard --cov-report=term-missing
+python -m build
+```
+
+Refresh the lock file after dependency changes:
+
+```bash
+./scripts/generate_constraints.sh
+```
 
 Build the image:
 
@@ -161,9 +192,21 @@ Run the bundled local stack:
 docker compose up --build -d
 ```
 
+The bundled Mosquitto container now uses development credentials:
+
+- username: `printguard-dev`
+- password: `printguard-dev-password`
+
 This repo uses Release Please for releases. New container images are published from GitHub releases, not from every push.
 
 </details>
+
+## Project Docs
+
+- contribution guide: `CONTRIBUTING.md`
+- security policy: `SECURITY.md`
+- architecture notes: `ARCHITECTURE.md`
+- operations runbook: `OPERATIONS.md`
 
 ## License
 

@@ -1,4 +1,5 @@
 .venv
+.venv/
 __pycache__
 success
 failure
@@ -11,3 +12,12 @@ model/
 data/
 .vscode/
 .DS_Store
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
+MEMORY.md
+docker/mosquitto/data/
+docker/mosquitto/log/

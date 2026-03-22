@@ -7,6 +7,7 @@ services:
       - "1883:1883"
     volumes:
       - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/passwordfile:/mosquitto/config/passwordfile:ro
 
   printguard:
     build:
@@ -16,14 +17,25 @@ services:
     restart: unless-stopped
     depends_on:
       - mqtt
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
     environment:
       MJPEG_URL: "http://printer.local:8080/?action=stream"
       MQTT_HOST: "mqtt"
       MQTT_PORT: "1883"
+      MQTT_USERNAME: "printguard-dev"
+      MQTT_PASSWORD: "printguard-dev-password"
       MQTT_TOPIC_PREFIX: "printguard"
       MQTT_DISCOVERY_PREFIX: "homeassistant"
       DEVICE_ID: "printguard-mjpeg-1"
       DEVICE_NAME: "PrintGuard MJPEG"
       DETECTION_INTERVAL_MS: "1000"
+      MQTT_CONNECT_TIMEOUT_SECONDS: "30"
       STREAM_RETRY_DELAY_MS: "5000"
+      STREAM_READ_FAILURE_LIMIT: "5"
       MQTT_RETRY_DELAY_MS: "5000"

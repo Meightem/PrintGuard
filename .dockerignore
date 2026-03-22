@@ -21,4 +21,5 @@ data/
 *.pth
 *.pt
 *.pkl
+*.npz
 docs/

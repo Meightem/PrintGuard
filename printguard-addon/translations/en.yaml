@@ -20,6 +20,27 @@ configuration:
   mqtt_password:
     name: MQTT password
     description: Optional MQTT password
+  mqtt_connect_timeout_seconds:
+    name: MQTT connect timeout
+    description: Seconds to wait for the initial MQTT connection
+  mqtt_connect_max_attempts:
+    name: MQTT connect attempts
+    description: Limit for initial MQTT connection retries, where 0 means unlimited
+  mqtt_tls_enabled:
+    name: MQTT TLS enabled
+    description: Enable TLS for the MQTT connection
+  mqtt_tls_insecure:
+    name: MQTT TLS insecure
+    description: Disable certificate verification for development-only TLS setups
+  mqtt_tls_ca_path:
+    name: MQTT TLS CA path
+    description: Optional CA certificate path for TLS validation
+  mqtt_tls_certfile:
+    name: MQTT TLS cert path
+    description: Optional client certificate path for mutual TLS
+  mqtt_tls_keyfile:
+    name: MQTT TLS key path
+    description: Optional client private key path for mutual TLS
   device_id:
     name: Device ID
     description: Home Assistant device identifier
@@ -35,6 +56,9 @@ configuration:
   stream_retry_delay_ms:
     name: Stream retry delay
     description: Delay before reconnect attempts in milliseconds
+  stream_read_failure_limit:
+    name: Stream read failure limit
+    description: Consecutive failed reads before the stream is marked offline
   mqtt_retry_delay_ms:
     name: MQTT retry delay
     description: Delay before MQTT reconnect attempts in milliseconds

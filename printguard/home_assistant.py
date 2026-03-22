@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Protocol
 
 from . import __version__
 from .config import Settings
@@ -13,6 +14,11 @@ class DiscoveryTopics:
     print_quality_state: str
 
 
+class SupportsPublish(Protocol):
+    def publish(self, topic: str, payload: str | dict, retain: bool = True) -> None:
+        ...
+
+
 def build_topics(settings: Settings) -> DiscoveryTopics:
     base = settings.mqtt_topic_prefix
     return DiscoveryTopics(
@@ -24,7 +30,11 @@ def build_topics(settings: Settings) -> DiscoveryTopics:
     )
 
 
-def publish_discovery(mqtt_client, settings: Settings, topics: DiscoveryTopics) -> None:
+def publish_discovery(
+    mqtt_client: SupportsPublish,
+    settings: Settings,
+    topics: DiscoveryTopics,
+) -> None:
     device = {
         "identifiers": [settings.device_id],
         "name": settings.device_name,
