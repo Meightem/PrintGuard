@@ -103,6 +103,7 @@ Home Assistant discovery topics are published under `homeassistant/` by default.
 
 - `stream/state=OFF` means the MJPEG stream could not be opened or frames stopped arriving
 - `print_quality/state` is an integer from `1` to `10`; this repo does not contain a separate temporal combination model, so the current implementation derives it from a temporally smoothed failure-confidence signal
+- stable good states are rate-limited; the service publishes a heartbeat roughly once per minute, while stream/status/classification changes and meaningful quality drops are pushed immediately
 - print quality interpretation:
   - `1` There is a print failure
   - `2` There is probably a print failure

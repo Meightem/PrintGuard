@@ -10,6 +10,9 @@ from .stream import create_frame_source
 
 LOGGER = logging.getLogger(__name__)
 QUALITY_SMOOTHING_ALPHA = 0.35
+STATE_HEARTBEAT_SECONDS = 60.0
+RAPID_QUALITY_DROP = 2
+WATCH_QUALITY_THRESHOLD = 5
 
 
 class HeadlessService:
@@ -35,6 +38,8 @@ class HeadlessService:
         self.last_classification = "unknown"
         self.last_print_quality = "unknown"
         self.smoothed_failure_confidence: float | None = None
+        self._last_published_state: dict[str, str] = {}
+        self._last_publish_monotonic = 0.0
         self.mqtt.add_connect_handler(self._publish_discovery_state)
 
     def run(self) -> None:
@@ -53,7 +58,8 @@ class HeadlessService:
 
     def _publish_discovery_state(self) -> None:
         publish_discovery(self.mqtt, self.settings, self.topics)
-        self._publish_current_state()
+        self.mqtt.publish(self.topics.availability, "online", retain=True)
+        self._publish_current_state(force=True)
 
     def _run_stream_session(self) -> None:
         frame_source = create_frame_source(
@@ -94,24 +100,27 @@ class HeadlessService:
             frame_source.close()
             time.sleep(self.settings.stream_retry_delay_ms / 1000.0)
 
-    def _publish_current_state(self) -> None:
-        self.mqtt.publish(self.topics.availability, "online", retain=True)
-        self.mqtt.publish(
-            self.topics.status_state,
-            self.current_status,
-            retain=self.settings.mqtt_retain_state,
-        )
-        self.mqtt.publish(self.topics.stream_state, self.stream_state, retain=True)
-        self.mqtt.publish(
-            self.topics.classification_state,
-            self.last_classification,
-            retain=self.settings.mqtt_retain_state,
-        )
-        self.mqtt.publish(
-            self.topics.print_quality_state,
-            self.last_print_quality,
-            retain=self.settings.mqtt_retain_state,
-        )
+    def _publish_current_state(self, force: bool = False) -> None:
+        snapshot = self._current_snapshot()
+        now = time.monotonic()
+        changed_keys = [
+            key
+            for key, value in snapshot.items()
+            if self._last_published_state.get(key) != value
+        ]
+        if not force and not changed_keys and now - self._last_publish_monotonic < STATE_HEARTBEAT_SECONDS:
+            return
+        if not force and not self._should_publish_now(snapshot, changed_keys, now):
+            return
+        publish_keys = list(snapshot) if force or now - self._last_publish_monotonic >= STATE_HEARTBEAT_SECONDS else changed_keys
+        for key in publish_keys:
+            self.mqtt.publish(
+                key,
+                snapshot[key],
+                retain=self.settings.mqtt_retain_state,
+            )
+        self._last_published_state = snapshot
+        self._last_publish_monotonic = now
 
     def _publish_stream_online(self) -> None:
         self.current_status = "online"
@@ -119,7 +128,7 @@ class HeadlessService:
         self.last_classification = "unknown"
         self.last_print_quality = "unknown"
         self.smoothed_failure_confidence = None
-        self._publish_current_state()
+        self._publish_current_state(force=True)
 
     def _publish_stream_error(self, error_message: str) -> None:
         LOGGER.warning("Stream error: %s", error_message)
@@ -128,7 +137,7 @@ class HeadlessService:
         self.last_classification = "unknown"
         self.last_print_quality = "unknown"
         self.smoothed_failure_confidence = None
-        self._publish_current_state()
+        self._publish_current_state(force=True)
 
     def _publish_classification(self, prediction: PredictionResult) -> None:
         self.last_classification = prediction.label
@@ -141,6 +150,37 @@ class HeadlessService:
         self.current_status = "online"
         self.stream_state = "ON"
         self._publish_current_state()
+
+    def _current_snapshot(self) -> dict[str, str]:
+        return {
+            self.topics.status_state: self.current_status,
+            self.topics.stream_state: self.stream_state,
+            self.topics.classification_state: self.last_classification,
+            self.topics.print_quality_state: self.last_print_quality,
+        }
+
+    def _should_publish_now(
+        self,
+        snapshot: dict[str, str],
+        changed_keys: list[str],
+        now: float,
+    ) -> bool:
+        if now - self._last_publish_monotonic >= STATE_HEARTBEAT_SECONDS:
+            return True
+        immediate_keys = {
+            self.topics.status_state,
+            self.topics.stream_state,
+            self.topics.classification_state,
+        }
+        if any(key in immediate_keys for key in changed_keys):
+            return True
+        previous_quality = self._parse_quality(self._last_published_state.get(self.topics.print_quality_state))
+        current_quality = self._parse_quality(snapshot[self.topics.print_quality_state])
+        if previous_quality is None or current_quality is None:
+            return False
+        if current_quality <= WATCH_QUALITY_THRESHOLD and current_quality != previous_quality:
+            return True
+        return previous_quality - current_quality >= RAPID_QUALITY_DROP
 
     @staticmethod
     def _failure_confidence_to_quality(failure_confidence: float) -> int:
@@ -157,3 +197,9 @@ class HeadlessService:
             QUALITY_SMOOTHING_ALPHA * failure_confidence
             + (1.0 - QUALITY_SMOOTHING_ALPHA) * self.smoothed_failure_confidence
         )
+
+    @staticmethod
+    def _parse_quality(value: str | None) -> int | None:
+        if value is None or value == "unknown":
+            return None
+        return int(value)
