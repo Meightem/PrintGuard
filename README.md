@@ -203,10 +203,7 @@ This repo uses Release Please for releases. New container images are published f
 
 ## Project Docs
 
-- contribution guide: `CONTRIBUTING.md`
-- security policy: `SECURITY.md`
 - architecture notes: `ARCHITECTURE.md`
-- operations runbook: `OPERATIONS.md`
 
 ## License
 
