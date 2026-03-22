@@ -102,6 +102,7 @@ Home Assistant discovery topics are published under `homeassistant/` by default.
 ## Notes
 
 - `stream/state=OFF` means the MJPEG stream could not be opened or frames stopped arriving
+- `classification/state` is not a raw one-frame label anymore; it is confirmed with the original-style majority-vote rule and only flips to `failure` after at least 2 failure predictions within the last 5 frames, with the current frame also being a failure
 - `print_quality/state` is an integer from `1` to `10`; this repo does not contain a separate temporal combination model, so the current implementation derives it from a temporally smoothed failure-confidence signal
 - stable good states are rate-limited; the service publishes a heartbeat roughly once per minute, while stream/status/classification changes and meaningful quality drops are pushed immediately
 - print quality interpretation:

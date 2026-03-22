@@ -1,5 +1,6 @@
 import logging
 import time
+from collections import deque
 
 from .config import Settings
 from .home_assistant import build_topics, publish_discovery
@@ -13,6 +14,8 @@ QUALITY_SMOOTHING_ALPHA = 0.35
 STATE_HEARTBEAT_SECONDS = 60.0
 RAPID_QUALITY_DROP = 2
 WATCH_QUALITY_THRESHOLD = 5
+DEFECT_VOTING_WINDOW = 5
+DEFECT_VOTING_THRESHOLD = 2
 
 
 class HeadlessService:
@@ -38,6 +41,7 @@ class HeadlessService:
         self.last_classification = "unknown"
         self.last_print_quality = "unknown"
         self.smoothed_failure_confidence: float | None = None
+        self._recent_raw_labels: deque[str] = deque(maxlen=DEFECT_VOTING_WINDOW)
         self._last_published_state: dict[str, str] = {}
         self._last_publish_monotonic = 0.0
         self.mqtt.add_connect_handler(self._publish_discovery_state)
@@ -128,6 +132,7 @@ class HeadlessService:
         self.last_classification = "unknown"
         self.last_print_quality = "unknown"
         self.smoothed_failure_confidence = None
+        self._recent_raw_labels.clear()
         self._publish_current_state(force=True)
 
     def _publish_stream_error(self, error_message: str) -> None:
@@ -137,10 +142,12 @@ class HeadlessService:
         self.last_classification = "unknown"
         self.last_print_quality = "unknown"
         self.smoothed_failure_confidence = None
+        self._recent_raw_labels.clear()
         self._publish_current_state(force=True)
 
     def _publish_classification(self, prediction: PredictionResult) -> None:
-        self.last_classification = prediction.label
+        self._recent_raw_labels.append(prediction.label)
+        self.last_classification = self._confirm_classification(prediction.label)
         self.smoothed_failure_confidence = self._smooth_failure_confidence(
             prediction.failure_confidence
         )
@@ -197,6 +204,14 @@ class HeadlessService:
             QUALITY_SMOOTHING_ALPHA * failure_confidence
             + (1.0 - QUALITY_SMOOTHING_ALPHA) * self.smoothed_failure_confidence
         )
+
+    def _confirm_classification(self, raw_label: str) -> str:
+        if raw_label != "failure":
+            return "success"
+        failure_votes = sum(1 for label in self._recent_raw_labels if label == "failure")
+        if failure_votes >= DEFECT_VOTING_THRESHOLD:
+            return "failure"
+        return "success"
 
     @staticmethod
     def _parse_quality(value: str | None) -> int | None:

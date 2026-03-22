@@ -40,6 +40,7 @@ PrintGuard reads one MJPEG stream, classifies frames with the baked-in ONNX mode
 - Stream availability is reported over MQTT; it is not a direct printer power signal.
 - MQTT discovery is automatic, so no custom HACS integration is required.
 - The add-on publishes only the core entities: Classification, Status, Stream, and Print Quality.
+- Classification uses the original-style majority-vote confirmation so brief one-frame failure flickers are filtered out.
 - Print Quality is a temporally smoothed score from `1` to `10`, where `10` means perfect print quality. This repo does not currently include a separate temporal combination model.
 - Stable good-state MQTT updates are rate-limited; important changes are still published immediately.
 - The add-on image is pulled from GHCR and should match the version in `config.yaml`.
