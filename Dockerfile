@@ -22,7 +22,22 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 RUN python ./scripts/download_model.py --output-dir /opt/printguard/model
 
+FROM python:${PYTHON_VERSION} AS package-builder
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY printguard ./printguard
+
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir build \
+ && python -m build --wheel --outdir /dist
+
 FROM python:${PYTHON_VERSION} AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -35,15 +50,14 @@ RUN groupadd --system printguard \
 WORKDIR /app
 
 COPY constraints.lock ./constraints.lock
-COPY pyproject.toml README.md ./
-COPY printguard ./printguard
+COPY --from=package-builder /dist /tmp/dist
 RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir --constraint constraints.lock .
+ && pip install --no-cache-dir --constraint constraints.lock /tmp/dist/printguard-*.whl \
+ && pip uninstall --yes setuptools wheel \
+ && rm -rf /tmp/dist
 
 COPY --from=model-builder /opt/printguard/model /opt/printguard/model
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 ENV MODEL_PATH=/opt/printguard/model/model.onnx
 ENV MODEL_OPTIONS_PATH=/opt/printguard/model/opt.json
 ENV PROTOTYPES_PATH=/opt/printguard/model/prototypes.npz
