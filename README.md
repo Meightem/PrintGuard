@@ -30,7 +30,7 @@ The model is baked into the image at build time under `/opt/printguard/model`.
 - versioning starts from `0.1.0` and stays in the `0.x` series until the service feels stable enough for `1.0.0`
 - Release Please manages changelog updates, version bumps, release PRs, and GitHub releases
 - use Conventional Commits for changes that should appear cleanly in releases, for example `feat:`, `fix:`, or `feat!:`
-- normal pushes run lightweight CI only; the GHCR image is published only when a Release Please release is created
+- pushes to `main` only run Release Please; the GHCR image is published only when a Release Please release is created
 
 ## Run
 
