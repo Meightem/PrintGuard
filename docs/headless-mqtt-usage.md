@@ -13,6 +13,8 @@ The headless service:
 - publishes stream availability, service state, last error, and classification
 - retries automatically when the stream becomes unavailable
 
+The headless Docker image is intentionally isolated from the original web application runtime. It installs only the minimal runtime dependencies needed for ONNX inference, OpenCV stream access, and MQTT publishing.
+
 It does not expose HTTP endpoints, a web UI, SSE, notifications, or printer APIs.
 
 ## Build
