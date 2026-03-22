@@ -1,5 +1,6 @@
 ARG PYTHON_VERSION=3.12-slim-bookworm
 ARG TORCH_VERSION=2.10.0
+ARG RUNTIME_USER=root
 
 FROM python:${PYTHON_VERSION} AS model-builder
 
@@ -35,6 +36,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 FROM python:${PYTHON_VERSION} AS runtime
 
+ARG RUNTIME_USER
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -66,6 +69,6 @@ ENV HEALTH_STALE_AFTER_SECONDS=180
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD ["printguard-healthcheck"]
 
-USER printguard
+USER ${RUNTIME_USER}
 
 ENTRYPOINT ["printguard"]
