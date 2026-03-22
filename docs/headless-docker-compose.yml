@@ -1,0 +1,15 @@
+services:
+  printguard-headless:
+    image: printguard-headless:local
+    container_name: printguard-headless
+    restart: unless-stopped
+    environment:
+      MJPEG_URL: "http://printer.local:8080/?action=stream"
+      MQTT_HOST: "mqtt.local"
+      MQTT_PORT: "1883"
+      MQTT_TOPIC_PREFIX: "printguard"
+      MQTT_DISCOVERY_PREFIX: "homeassistant"
+      DEVICE_ID: "printguard-mjpeg-1"
+      DEVICE_NAME: "PrintGuard MJPEG"
+      DETECTION_INTERVAL_MS: "1000"
+      STREAM_RETRY_DELAY_MS: "5000"

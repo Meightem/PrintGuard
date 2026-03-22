@@ -20,6 +20,7 @@ PrintGuard offers local, **real-time print failure detection** for **3D printing
 - [Installation](#installation)
     - [PyPI Installation](#pypi-installation)
     - [Docker Installation](#docker-installation)
+- [Headless MQTT Runtime](#headless-mqtt-runtime)
 - [Initial Configuration](#initial-configuration)
 - [Usage](#usage)
 - [Technical Documentation](/docs/overview.md)
@@ -90,3 +91,23 @@ After installation, you will need to configure PrintGuard. First, visit the setu
   | ![PrintGuard Setup Settings](docs/media/images/interface-setup-settings.png) | Accessible via the configure setup button in the settings menu, the setup page allows configuration of camera feed streaming settings such as resolution and frame rate, as well as polling intervals and detection rates. |
   | ![PrintGuard Alerts and Notifications](docs/media/images/interface-alerts-notifications.png) | When a failure is detected a notification is dispatched to subscribed devices via web push notifications, allowing users to get real-time alerts and updates about their print. On the web interface, an alert modal appears showing a snapshot of the failure and buttons to dismiss the alert or suspend/cancel the print job. If the alert is not addressed within the customisable countdown time, the printer will automatically be suspended, cancelled or resumed based on user settings. |
   | | |
+
+## Headless MQTT Runtime
+
+This repository now also contains a simplified headless runtime aimed at single-stream MQTT-based deployment.
+
+The headless runtime:
+
+- uses one MJPEG stream as input
+- runs ONNX inference only
+- publishes Home Assistant-compatible MQTT discovery and state topics
+- bakes the model into the Docker image at build time
+- exposes no HTTP endpoints or web UI
+
+Build the headless image with:
+
+```bash
+docker build -f Dockerfile.headless -t printguard-headless:local .
+```
+
+See `docs/headless-mqtt-plan.md` for the design plan and `docs/headless-mqtt-usage.md` for runtime configuration and MQTT topic details.

@@ -51,12 +51,10 @@ Thumbs.db
 
 # Docker
 .dockerignore
-Dockerfile*
 docker-compose*.yml
 
 # Documentation
 docs/
-README.md
 *.md
 
 # Scripts and development tools
@@ -98,3 +96,10 @@ temp/
 .env.development
 .env.test
 .env.production
+
+!README.md
+!scripts/
+!scripts/download_headless_model.py
+!Dockerfile.headless
+!requirements-headless.txt
+!requirements-model-build.txt

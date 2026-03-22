@@ -31,11 +31,13 @@ dependencies = [
     "cryptography==45.0.5",
     "numpy==2.2.6",
     "onnxruntime==1.22.1",
-    "huggingface_hub==0.33.4"
+    "huggingface_hub==0.33.4",
+    "paho-mqtt==2.1.0"
 ]
 
 [project.scripts]
 printguard = "printguard.app:run"
+printguard-headless = "printguard.headless.main:run"
 
 [tool.black]
 line-length = 88
