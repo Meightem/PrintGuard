@@ -1,0 +1,46 @@
+configuration:
+  mjpeg_url:
+    name: MJPEG URL
+    description: HTTP MJPEG stream URL to classify
+  mqtt_host:
+    name: MQTT host
+    description: Hostname of the MQTT broker
+  mqtt_port:
+    name: MQTT port
+    description: Port of the MQTT broker
+  mqtt_topic_prefix:
+    name: MQTT topic prefix
+    description: Prefix for all published state topics
+  mqtt_discovery_prefix:
+    name: MQTT discovery prefix
+    description: Home Assistant MQTT discovery prefix
+  mqtt_username:
+    name: MQTT username
+    description: Optional MQTT username
+  mqtt_password:
+    name: MQTT password
+    description: Optional MQTT password
+  device_id:
+    name: Device ID
+    description: Home Assistant device identifier
+  device_name:
+    name: Device name
+    description: Home Assistant device name
+  detection_interval_ms:
+    name: Detection interval
+    description: Delay between inferences in milliseconds
+  stream_open_timeout_ms:
+    name: Stream open timeout
+    description: Timeout for opening the MJPEG stream in milliseconds
+  stream_retry_delay_ms:
+    name: Stream retry delay
+    description: Delay before reconnect attempts in milliseconds
+  mqtt_retry_delay_ms:
+    name: MQTT retry delay
+    description: Delay before MQTT reconnect attempts in milliseconds
+  enabled:
+    name: Enabled
+    description: Start the service in the enabled state
+  log_level:
+    name: Log level
+    description: Use DEBUG to log predictions and outgoing MQTT payloads

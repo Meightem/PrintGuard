@@ -15,6 +15,7 @@ There is no web UI, REST API, database, or printer integration anymore.
 - `docker-compose.yml` starts the service with a bundled Mosquitto broker
 - `printguard/` contains the runtime code
 - `scripts/download_model.py` downloads and normalizes the model artifacts for the image build
+- `printguard-addon/` contains the Home Assistant add-on metadata
 
 ## Build
 
@@ -65,6 +66,20 @@ docker compose up --build -d
 ```
 
 Before starting, update `MJPEG_URL` in `docker-compose.yml`.
+
+## Home Assistant Add-on
+
+This repo also acts as a custom Home Assistant add-on repository.
+
+Install flow:
+
+1. Open the Home Assistant Add-on Store
+2. Add `https://github.com/Meightem/PrintGuard` as a custom repository
+3. Install `PrintGuard`
+4. Set `mjpeg_url` and `mqtt_host`
+5. Start the add-on
+
+The add-on metadata lives in `printguard-addon/config.yaml` and the runtime reads add-on options from `/data/options.json` automatically.
 
 ## MQTT Output
 

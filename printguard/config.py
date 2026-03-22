@@ -1,27 +1,48 @@
+import json
 import logging
 import os
 from dataclasses import dataclass
 
 
-def _get_bool(name: str, default: bool) -> bool:
+def _load_addon_options() -> dict:
+    options_path = os.getenv("ADDON_OPTIONS_PATH", "/data/options.json")
+    if not os.path.exists(options_path):
+        return {}
+    with open(options_path, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise ValueError(f"Add-on options file must contain an object: {options_path}")
+    return data
+
+
+def _get_raw(name: str, addon_options: dict, default=None):
     value = os.getenv(name)
+    if value is not None:
+        return value
+    return addon_options.get(name.lower(), default)
+
+
+def _get_bool(name: str, addon_options: dict, default: bool) -> bool:
+    value = _get_raw(name, addon_options, default)
+    if isinstance(value, bool):
+        return value
     if value is None:
         return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _get_int(name: str, default: int) -> int:
-    value = os.getenv(name)
+def _get_int(name: str, addon_options: dict, default: int) -> int:
+    value = _get_raw(name, addon_options, default)
     if value is None or value == "":
         return default
     return int(value)
 
 
-def _get_str(name: str, default: str = "") -> str:
-    value = os.getenv(name)
+def _get_str(name: str, addon_options: dict, default: str = "") -> str:
+    value = _get_raw(name, addon_options, default)
     if value is None:
         return default
-    return value.strip()
+    return str(value).strip()
 
 
 @dataclass(frozen=True)
@@ -51,38 +72,52 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
-        mjpeg_url = _get_str("MJPEG_URL")
-        mqtt_host = _get_str("MQTT_HOST")
-        mqtt_topic_prefix = _get_str("MQTT_TOPIC_PREFIX", "printguard")
+        addon_options = _load_addon_options()
+        mjpeg_url = _get_str("MJPEG_URL", addon_options)
+        mqtt_host = _get_str("MQTT_HOST", addon_options)
+        mqtt_topic_prefix = _get_str("MQTT_TOPIC_PREFIX", addon_options, "printguard")
         if not mjpeg_url:
             raise ValueError("MJPEG_URL is required")
         if not mqtt_host:
             raise ValueError("MQTT_HOST is required")
-        device_id = _get_str("DEVICE_ID", "printguard-mjpeg-1")
+        device_id = _get_str("DEVICE_ID", addon_options, "printguard-mjpeg-1")
         return cls(
             mjpeg_url=mjpeg_url,
             mqtt_host=mqtt_host,
-            mqtt_port=_get_int("MQTT_PORT", 1883),
+            mqtt_port=_get_int("MQTT_PORT", addon_options, 1883),
             mqtt_topic_prefix=mqtt_topic_prefix.rstrip("/"),
-            mqtt_username=_get_str("MQTT_USERNAME"),
-            mqtt_password=_get_str("MQTT_PASSWORD"),
-            mqtt_client_id=_get_str("MQTT_CLIENT_ID", f"{device_id}-client"),
-            mqtt_discovery_prefix=_get_str("MQTT_DISCOVERY_PREFIX", "homeassistant").rstrip("/"),
-            mqtt_qos=_get_int("MQTT_QOS", 1),
-            mqtt_retain_discovery=_get_bool("MQTT_RETAIN_DISCOVERY", True),
-            mqtt_retain_state=_get_bool("MQTT_RETAIN_STATE", True),
-            mqtt_retry_delay_ms=_get_int("MQTT_RETRY_DELAY_MS", 5000),
-            device_name=_get_str("DEVICE_NAME", "PrintGuard MJPEG"),
+            mqtt_username=_get_str("MQTT_USERNAME", addon_options),
+            mqtt_password=_get_str("MQTT_PASSWORD", addon_options),
+            mqtt_client_id=_get_str("MQTT_CLIENT_ID", addon_options, f"{device_id}-client"),
+            mqtt_discovery_prefix=_get_str(
+                "MQTT_DISCOVERY_PREFIX",
+                addon_options,
+                "homeassistant",
+            ).rstrip("/"),
+            mqtt_qos=_get_int("MQTT_QOS", addon_options, 1),
+            mqtt_retain_discovery=_get_bool("MQTT_RETAIN_DISCOVERY", addon_options, True),
+            mqtt_retain_state=_get_bool("MQTT_RETAIN_STATE", addon_options, True),
+            mqtt_retry_delay_ms=_get_int("MQTT_RETRY_DELAY_MS", addon_options, 5000),
+            device_name=_get_str("DEVICE_NAME", addon_options, "PrintGuard MJPEG"),
             device_id=device_id,
-            detection_interval_ms=_get_int("DETECTION_INTERVAL_MS", 1000),
-            stream_open_timeout_ms=_get_int("STREAM_OPEN_TIMEOUT_MS", 5000),
-            stream_retry_delay_ms=_get_int("STREAM_RETRY_DELAY_MS", 5000),
-            enabled=_get_bool("ENABLED", True),
-            log_level=_get_str("LOG_LEVEL", "INFO").upper(),
-            model_path=_get_str("MODEL_PATH", "/opt/printguard/model/model.onnx"),
-            model_options_path=_get_str("MODEL_OPTIONS_PATH", "/opt/printguard/model/opt.json"),
+            detection_interval_ms=_get_int("DETECTION_INTERVAL_MS", addon_options, 1000),
+            stream_open_timeout_ms=_get_int("STREAM_OPEN_TIMEOUT_MS", addon_options, 5000),
+            stream_retry_delay_ms=_get_int("STREAM_RETRY_DELAY_MS", addon_options, 5000),
+            enabled=_get_bool("ENABLED", addon_options, True),
+            log_level=_get_str("LOG_LEVEL", addon_options, "INFO").upper(),
+            model_path=_get_str(
+                "MODEL_PATH",
+                addon_options,
+                "/opt/printguard/model/model.onnx",
+            ),
+            model_options_path=_get_str(
+                "MODEL_OPTIONS_PATH",
+                addon_options,
+                "/opt/printguard/model/opt.json",
+            ),
             prototypes_path=_get_str(
                 "PROTOTYPES_PATH",
+                addon_options,
                 "/opt/printguard/model/prototypes/cache/prototypes.pkl",
             ),
         )
