@@ -43,7 +43,7 @@ dev = [
     "pip-tools>=7.5,<8",
     "pytest>=9.0,<10",
     "pytest-cov>=7.1,<8",
-    "ruff>=0.15,<1",
+    "ruff>=0.15.10,<1",
 ]
 model-build = [
     "huggingface_hub>=1.7,<2",
